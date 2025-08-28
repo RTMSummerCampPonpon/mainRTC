@@ -1,0 +1,54 @@
+# mainRTC CMake config file
+#
+# This file sets the following variables:
+# mainRTC_FOUND - Always TRUE.
+# mainRTC_INCLUDE_DIRS - Directories containing the mainRTC include files.
+# mainRTC_IDL_DIRS - Directories containing the mainRTC IDL files.
+# mainRTC_LIBRARIES - Libraries needed to use mainRTC.
+# mainRTC_DEFINITIONS - Compiler flags for mainRTC.
+# mainRTC_VERSION - The version of mainRTC found.
+# mainRTC_VERSION_MAJOR - The major version of mainRTC found.
+# mainRTC_VERSION_MINOR - The minor version of mainRTC found.
+# mainRTC_VERSION_REVISION - The revision version of mainRTC found.
+# mainRTC_VERSION_CANDIDATE - The candidate version of mainRTC found.
+
+message(STATUS "Found mainRTC-@PROJECT_VERSION@")
+set(mainRTC_FOUND TRUE)
+
+find_package(<dependency> REQUIRED)
+
+#set(mainRTC_INCLUDE_DIRS
+#    "@CMAKE_INSTALL_PREFIX@/include/@PROJECT_NAME_LOWER@-@PROJECT_VERSION_MAJOR@"
+#    ${<dependency>_INCLUDE_DIRS}
+#    )
+#
+#set(mainRTC_IDL_DIRS
+#    "@CMAKE_INSTALL_PREFIX@/include/@PROJECT_NAME_LOWER@-@PROJECT_VERSION_MAJOR@/idl")
+set(mainRTC_INCLUDE_DIRS
+    "@CMAKE_INSTALL_PREFIX@/include/@CPACK_PACKAGE_FILE_NAME@"
+    ${<dependency>_INCLUDE_DIRS}
+    )
+set(mainRTC_IDL_DIRS
+    "@CMAKE_INSTALL_PREFIX@/include/@CPACK_PACKAGE_FILE_NAME@/idl")
+
+
+if(WIN32)
+    set(mainRTC_LIBRARIES
+        "@CMAKE_INSTALL_PREFIX@/@LIB_INSTALL_DIR@/@CMAKE_SHARED_LIBRARY_PREFIX@@PROJECT_NAME_LOWER@@CMAKE_STATIC_LIBRARY_SUFFIX@"
+        ${<dependency>_LIBRARIES}
+        )
+else(WIN32)
+    set(mainRTC_LIBRARIES
+        "@CMAKE_INSTALL_PREFIX@/@LIB_INSTALL_DIR@/@CMAKE_SHARED_LIBRARY_PREFIX@@PROJECT_NAME_LOWER@@CMAKE_SHARED_LIBRARY_SUFFIX@"
+        ${<dependency>_LIBRARIES}
+        )
+endif(WIN32)
+
+set(mainRTC_DEFINITIONS ${<dependency>_DEFINITIONS})
+
+set(mainRTC_VERSION @PROJECT_VERSION@)
+set(mainRTC_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(mainRTC_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(mainRTC_VERSION_REVISION @PROJECT_VERSION_REVISION@)
+set(mainRTC_VERSION_CANDIDATE @PROJECT_VERSION_CANDIDATE@)
+
