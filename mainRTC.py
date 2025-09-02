@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 
@@ -62,10 +62,10 @@ class mainRTC(OpenRTM_aist.DataFlowComponentBase):
     def __init__(self, manager):
         OpenRTM_aist.DataFlowComponentBase.__init__(self, manager)
 
-        self._d_camera_human = OpenRTM_aist.instantiateDataType(RTC.TimedBoolean)
+        self._d_camera_human = OpenRTM_aist.instantiateDataType(RTC.TimedFloatSeq)
         self._camera_humanIn = OpenRTM_aist.InPort("camera_human", self._d_camera_human)
 
-        self._d_camera_face = OpenRTM_aist.instantiateDataType(RTC.TimedFloatSeq)
+        self._d_camera_face = OpenRTM_aist.instantiateDataType(RTC.TimedFloat)
         self._camera_faceIn = OpenRTM_aist.InPort("camera_face", self._d_camera_face)
 
         self._d_arm_state = OpenRTM_aist.instantiateDataType(RTC.TimedBoolean)
@@ -77,7 +77,7 @@ class mainRTC(OpenRTM_aist.DataFlowComponentBase):
         self._d_arm_move = OpenRTM_aist.instantiateDataType(RTC.TimedBoolean)
         self._arm_moveOut = OpenRTM_aist.OutPort("arm_move", self._d_arm_move)
 
-        self._d_base_move = OpenRTM_aist.instantiateDataType(RTC.TimedFloatSeq)
+        self._d_base_move = OpenRTM_aist.instantiateDataType(RTC.TimedDoubleSeq)
         self._base_moveOut = OpenRTM_aist.OutPort("base_move", self._d_base_move)
 
         ### system states
@@ -203,13 +203,13 @@ class mainRTC(OpenRTM_aist.DataFlowComponentBase):
             return list(data.data)
         return None
 
-    def _write_base(self, flag: bool):
-        self._d_base_move.data = bool(flag)
-        self._base_moveOut.write(self._d_base_move)
+    def _write_base(self, flag):
+        self._d_base_move.data = flag
+        self._base_moveOut.write()
 
-    def _write_arm(self, flag: bool):
+    def _write_arm(self, flag :bool):
         self._d_arm_move.data = bool(flag)
-        self._arm_moveOut.write(self._d_arm_move)
+        self._arm_moveOut.write()
 
     ##
     #
@@ -222,8 +222,8 @@ class mainRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onExecute(self, ec_id):
         # read data
-        human_flag = self._read_bool(self._camera_humanIn)
-        face_vec = self._read_seq(self._camera_faceIn)
+        human_flag = self._read_seq(self._camera_humanIn)
+        face_vec = self._read_bool(self._camera_faceIn)
         base_done = self._read_bool(self._base_stateIn)
         arm_done = self._read_bool(self._arm_stateIn)
 
@@ -233,25 +233,34 @@ class mainRTC(OpenRTM_aist.DataFlowComponentBase):
             
             # True, move base 
             if human_flag:
+                print("human detected", human_flag)
                 self._write_base(human_flag)
+                print("cmd to base OK")
                 self._state = "WAIT_BASE_DONE"
-            else:
-                # False, wait
-                if self._state == "STOP":
-                    self._write_arm(False)
 
         # face deteck, arm move
-        if self._state == "WAIT_BASE_DONE" and base_done is True:
-            arm_go = bool(face_vec and len(face_vec) >= 3) # 3 time face deteck 
-            self._write_arm(arm_go)
-            self._arm_started = arm_go
-            self._state = "WAIT_ARM_DONE" if arm_go else "STOP"
+        # if self._state == "WAIT_BASE_DONE" and base_done is True:
+        if self._state == "WAIT_BASE_DONE" and human_flag[2] <=0.75:
+            print("base moved, face detecting")
+            if face_vec: 
+                print("face detected")
+                self._write_arm(True)
+                print("cmd to arm ok")
+                self._arm_started = True
+                self._state = "WAIT_ARM_DONE"
+            
+        else:
+            self._arm_started = False
+            self._state = "STOP"
 
         # end and reset
         if self._state == "WAIT_ARM_DONE" and arm_done is True:
+            print("arm moved, reseting")
             self._write_arm(False)
             self._write_base(False)
             self._arm_started = False
+            self._state = "STOP"
+        else:
             self._state = "STOP"
 
         return RTC.RTC_OK
